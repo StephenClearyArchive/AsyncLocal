@@ -15,25 +15,35 @@ namespace Nito.AsyncEx.AsyncLocal
         private readonly string _slotName = Guid.NewGuid().ToString("N");
 
         /// <summary>
-        /// The value representing "none".
+        /// The default value factory.
         /// </summary>
-        private readonly TImmutableType _empty;
+        private readonly Func<TImmutableType> _factory;
 
         /// <summary>
-        /// Creates a new async-local variable with "empty" defined as default value of <typeparamref name="TImmutableType"/>.
+        /// Creates a new async-local variable that initializes its value with the default value of <typeparamref name="TImmutableType"/>.
         /// </summary>
         public AsyncLocal()
-            : this(default(TImmutableType))
+            : this(() => default(TImmutableType))
         {
         }
 
         /// <summary>
-        /// Creates a new async-local variable with "empty" defined as the specified value of <typeparamref name="TImmutableType"/>.
+        /// Creates a new async-local variable that initializes its value with <paramref name="empty"/>.
         /// </summary>
         /// <param name="empty">The value to return when there is no data yet.</param>
         public AsyncLocal(TImmutableType empty)
+            : this(() => empty)
         {
-            _empty = empty;
+        }
+
+        public AsyncLocal(Func<TImmutableType> factory)
+        {
+            _factory = factory;
+        }
+
+        public bool IsValueCreated
+        {
+            get { return CallContext.LogicalGetData(_slotName) != null; }
         }
 
         /// <summary>
@@ -43,15 +53,18 @@ namespace Nito.AsyncEx.AsyncLocal
         {
             get
             {
-                var ret = CallContext.LogicalGetData(_slotName);
-                if (ret is TImmutableType)
-                    return (TImmutableType)ret;
-                return _empty;
+                // todo: is thread safety a concern? or do they copy-on-write?
+                var ret = CallContext.LogicalGetData(_slotName) as Wrapper;
+                if (ret != null)
+                    return ret.Value;
+                ret = new Wrapper(_factory());
+                CallContext.LogicalSetData(_slotName, ret);
+                return ret.Value;
             }
 
             set
             {
-                CallContext.LogicalSetData(_slotName, value);
+                CallContext.LogicalSetData(_slotName, new Wrapper(value));
             }
         }
 
@@ -61,6 +74,16 @@ namespace Nito.AsyncEx.AsyncLocal
         public void Dispose()
         {
             CallContext.FreeNamedDataSlot(_slotName);
+        }
+
+        private sealed class Wrapper
+        {
+            public Wrapper(TImmutableType value)
+            {
+                Value = value;
+            }
+
+            public TImmutableType Value { get; private set; }
         }
     }
 }
