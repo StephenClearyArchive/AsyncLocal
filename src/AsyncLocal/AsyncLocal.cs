@@ -17,7 +17,7 @@ namespace Nito.AsyncEx.AsyncLocal
         /// <summary>
         /// The default value when none has been set.
         /// </summary>
-        private readonly TImmutableType _default;
+        private readonly TImmutableType _defaultValue;
 
         /// <summary>
         /// Creates a new async-local variable with the default value of <typeparamref name="TImmutableType"/>.
@@ -30,9 +30,9 @@ namespace Nito.AsyncEx.AsyncLocal
         /// <summary>
         /// Creates a new async-local variable with the specified default value.
         /// </summary>
-        public AsyncLocal(TImmutableType @default)
+        public AsyncLocal(TImmutableType defaultValue)
         {
-            _default = @default;
+            _defaultValue = defaultValue;
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Nito.AsyncEx.AsyncLocal
             {
                 var ret = CallContext.LogicalGetData(_slotName);
                 if (ret == null)
-                    return _default;
+                    return _defaultValue;
                 return (TImmutableType)ret;
             }
 
