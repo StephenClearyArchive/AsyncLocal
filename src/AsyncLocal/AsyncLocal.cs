@@ -7,7 +7,7 @@ namespace Nito.AsyncEx.AsyncLocal
     /// Data that is "local" to the current async method. This is the async near-equivalent of <c>ThreadLocal&lt;T&gt;</c>.
     /// </summary>
     /// <typeparam name="TImmutableType">The type of the data. This must be an immutable type.</typeparam>
-    public sealed class AsyncLocal<TImmutableType> : IDisposable
+    public sealed class AsyncLocal<TImmutableType>
     {
         /// <summary>
         /// Our unique slot name.
@@ -15,81 +15,59 @@ namespace Nito.AsyncEx.AsyncLocal
         private readonly string _slotName = Guid.NewGuid().ToString("N");
 
         /// <summary>
-        /// The default value factory.
+        /// The default value when none has been set.
         /// </summary>
-        private readonly Func<TImmutableType> _factory;
+        private readonly TImmutableType _default;
 
         /// <summary>
-        /// Creates a new async-local variable that lazy-initializes its value with the default value of <typeparamref name="TImmutableType"/>.
+        /// Creates a new async-local variable with the default value of <typeparamref name="TImmutableType"/>.
         /// </summary>
         public AsyncLocal()
-            : this(() => default(TImmutableType))
+            : this(default(TImmutableType))
         {
         }
 
         /// <summary>
-        /// Creates a new async-local variable that lazy-initializes its value with the specified value.
+        /// Creates a new async-local variable with the specified default value.
         /// </summary>
-        /// <param name="empty">The value used to lazy-initialize <see cref="Value"/>.</param>
-        public AsyncLocal(TImmutableType empty)
-            : this(() => empty)
+        public AsyncLocal(TImmutableType @default)
         {
+            _default = @default;
         }
 
         /// <summary>
-        /// Creates a new async-local variable that uses the specified factory method to lazy-initialize itself.
+        /// Returns a value indicating whether the value of this async-local variable has been set for the local context.
         /// </summary>
-        /// <param name="factory"></param>
-        public AsyncLocal(Func<TImmutableType> factory)
-        {
-            _factory = factory;
-        }
-
-        public bool IsValueCreated
+        public bool IsValueSet
         {
             get { return CallContext.LogicalGetData(_slotName) != null; }
         }
 
         /// <summary>
-        /// Gets or sets the value of this async-local variable.
+        /// Gets or sets the value of this async-local variable for the local context.
         /// </summary>
         public TImmutableType Value
         {
             get
             {
-                var ret = CallContext.LogicalGetData(_slotName) as Wrapper;
-                if (ret != null)
-                    return ret.Value;
-                
-                // When there is no value yet for this logical call context, then this thread is about to create its own copy of the context.
-                // So we can create the value directly without worrying about multiple threads executing the factory method.
-                ret = new Wrapper(_factory());
-                CallContext.LogicalSetData(_slotName, ret);
-                return ret.Value;
+                var ret = CallContext.LogicalGetData(_slotName);
+                if (ret == null)
+                    return _default;
+                return (TImmutableType)ret;
             }
 
             set
             {
-                CallContext.LogicalSetData(_slotName, new Wrapper(value));
+                CallContext.LogicalSetData(_slotName, value);
             }
         }
 
         /// <summary>
-        /// Deletes this async-local variable.
+        /// Clears the value of this async-local variable for the local context.
         /// </summary>
-        public void Dispose()
+        public void ClearValue()
         {
             CallContext.FreeNamedDataSlot(_slotName);
-        }
-
-        private sealed class Wrapper
-        {
-            public Wrapper(TImmutableType value)
-            {
-                Value = value;
-            }
-
-            public TImmutableType Value { get; private set; }
         }
     }
 }
