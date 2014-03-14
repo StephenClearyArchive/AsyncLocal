@@ -20,7 +20,7 @@ namespace Nito.AsyncEx.AsyncLocal
         private readonly Func<TImmutableType> _factory;
 
         /// <summary>
-        /// Creates a new async-local variable that initializes its value with the default value of <typeparamref name="TImmutableType"/>.
+        /// Creates a new async-local variable that lazy-initializes its value with the default value of <typeparamref name="TImmutableType"/>.
         /// </summary>
         public AsyncLocal()
             : this(() => default(TImmutableType))
@@ -28,14 +28,18 @@ namespace Nito.AsyncEx.AsyncLocal
         }
 
         /// <summary>
-        /// Creates a new async-local variable that initializes its value with <paramref name="empty"/>.
+        /// Creates a new async-local variable that lazy-initializes its value with the specified value.
         /// </summary>
-        /// <param name="empty">The value to return when there is no data yet.</param>
+        /// <param name="empty">The value used to lazy-initialize <see cref="Value"/>.</param>
         public AsyncLocal(TImmutableType empty)
             : this(() => empty)
         {
         }
 
+        /// <summary>
+        /// Creates a new async-local variable that uses the specified factory method to lazy-initialize itself.
+        /// </summary>
+        /// <param name="factory"></param>
         public AsyncLocal(Func<TImmutableType> factory)
         {
             _factory = factory;

@@ -44,5 +44,16 @@ namespace UnitTests
             var result = CallContext.LogicalGetData(slot);
             Assert.IsNull(result);
         }
+
+        [TestMethod]
+        public void MissingValue_AddedByMethod_IsPropagatedToOriginalMethod()
+        {
+            var slot = Guid.NewGuid().ToString("N");
+            const int value = 13;
+            Action action = () => CallContext.LogicalSetData(slot, value);
+            action();
+            var result = (int)CallContext.LogicalGetData(slot);
+            Assert.AreEqual(value, result);
+        }
     }
 }
