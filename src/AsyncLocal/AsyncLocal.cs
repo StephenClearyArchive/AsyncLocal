@@ -53,10 +53,12 @@ namespace Nito.AsyncEx.AsyncLocal
         {
             get
             {
-                // todo: is thread safety a concern? or do they copy-on-write?
                 var ret = CallContext.LogicalGetData(_slotName) as Wrapper;
                 if (ret != null)
                     return ret.Value;
+                
+                // When there is no value yet for this logical call context, then this thread is about to create its own copy of the context.
+                // So we can create the value directly without worrying about multiple threads executing the factory method.
                 ret = new Wrapper(_factory());
                 CallContext.LogicalSetData(_slotName, ret);
                 return ret.Value;
