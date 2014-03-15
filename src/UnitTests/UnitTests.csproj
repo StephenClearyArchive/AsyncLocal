@@ -50,8 +50,15 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="UnitTests.cs" />
     <Compile Include="PlatformTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AsyncLocal\AsyncLocal.csproj">
+      <Project>{7f6ac94b-6208-4dda-a819-3dc8ee60ecf3}</Project>
+      <Name>AsyncLocal</Name>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
